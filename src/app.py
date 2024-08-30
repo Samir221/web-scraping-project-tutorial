@@ -29,28 +29,45 @@ dataframes = []
 
 # parse each table
 for i, table in enumerate(tables):
-    print(f"Table {i + 1}: ")
-
     thead = table.find('thead')
     if thead:
         headers = [th.text.strip() for th in table.find('thead').find_all('th')]
     else:
         headers = None
 
-    #Extract table rows
-    rows = table.find('tbody').find_all('tr')
-    table_data = []
-    for row in rows:
-        columns = [td.text.strip() for td in row.find_all('td')]
-        table_data.append(columns)
+    if headers == ["Date", "Value"]:
+        #Extract table rows
+        rows = table.find('tbody').find_all('tr')
+        table_data = []
+        for row in rows:
+            columns = [td.text.strip() for td in row.find_all('td')]
+            table_data.append(columns)
 
-    df = pd.DataFrame(table_data, columns=headers)
-    dataframes.append(df)
+        df = pd.DataFrame(table_data, columns=headers)
+        dataframes.append(df)
 
-    print("Table {i+1} DataFrame: ")
-    print(df)
-    print("\n")
+combined_df = pd.concat(dataframes, ignore_index=True)
+print("Combined DataFrame: ")
+print(combined_df)
 
-    combined_df = pd.concat(dataframes, ignore_index=True)
-    print("Combined DataFrame: ")
-    print(combined_df)
+
+conn = sqlite3.connect('tesla_revenues.db')
+cursor = conn.cursor()
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS tesla_revenues (
+               Date TEXT UNIQUE,
+               VALUE TEXT
+    )
+    """)
+
+for index, row in combined_df.iterrows():
+    cursor.execute("""
+    INSERT OR IGNORE INTO tesla_revenues (Date, Value) VALUES (?, ?)
+    """, (row['Date'], row['Value']))
+
+conn.commit()
+conn.close()
+
+print("DATA STORED IN SQLITE DATABASE")
+
