@@ -29,13 +29,13 @@ dataframes = []
 
 # parse each table
 for i, table in enumerate(tables):
-    print(f"Table {i+1}: ")
+    print(f"Table {i + 1}: ")
 
     thead = table.find('thead')
     if thead:
         headers = [th.text.strip() for th in table.find('thead').find_all('th')]
     else:
-        headers = []
+        headers = None
 
     #Extract table rows
     rows = table.find('tbody').find_all('tr')
